@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>隨手記 — 台灣輕鬆記帳</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2EC;
+    --card: #FFFDF8;
+    --ink: #1A1714;
+    --ink2: #6B6560;
+    --ink3: #A09A94;
+    --accent: #C84B31;
+    --accent2: #E8894A;
+    --green: #2D7A4F;
+    --green-light: #EAF4EE;
+    --red-light: #FDF0EE;
+    --border: #E5E0D8;
+    --shadow: 0 2px 12px rgba(26,23,20,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,23,20,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--ink);
+    color: #fff;
+    padding: 52px 24px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.15;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 40px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--accent2);
+    opacity: 0.1;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .app-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .app-title span { color: var(--accent2); }
+  .month-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .invoice-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .invoice-btn:hover { background: rgba(255,255,255,0.18); }
+  .invoice-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .summary-item { }
+  .summary-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+  }
+  .summary-value {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .summary-value.income { color: #7EDFA8; }
+  .summary-value.expense { color: #F98B72; }
+  .summary-value.balance { color: #fff; }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(26,23,20,0.06);
+  }
+  .tab-item {
+    flex: 1;
+    padding: 14px 8px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .tab-item.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Content */
+  .content { padding: 0 0 100px; }
+
+  /* Add button floating */
+  .fab {
+    position: fixed;
+    bottom: 28px;
+    right: 50%;
+    transform: translateX(50%);
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 28px;
+    padding: 16px 32px;
+    font-size: 15px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(200,75,49,0.35);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    z-index: 200;
+    letter-spacing: 0.5px;
+  }
+  .fab:hover { transform: translateX(50%) translateY(-2px); box-shadow: 0 10px 32px rgba(200,75,49,0.45); }
+  .fab:active { transform: translateX(50%) scale(0.97); }
+
+  /* Transaction list */
+  .date-group { padding: 0 16px; }
+  .date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0 8px;
+  }
+  .date-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink3);
+    letter-spacing: 0.5px;
+  }
+  .date-total {
+    font-size: 12px;
+    color: var(--ink3);
+  }
+  .date-total .neg { color: var(--accent); }
+  .date-total .pos { color: var(--green); }
+
+  .tx-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .tx-card:hover { box-shadow: var(--shadow); border-color: #D0C8BE; }
+  .tx-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tx-note {
+    font-size: 12px;
+    color: var(--ink3);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tx-amount {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    flex-shrink: 0;
+  }
+  .tx-amount.expense { color: var(--ink); }
+  .tx-amount.income { color: var(--green); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 32px;
+    color: var(--ink3);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-text { font-size: 15px; line-height: 1.6; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,23,20,0.6);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card);
+    width: 100%;
+    max-width: 430px;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 24px 48px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  /* Type selector */
+  .type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: 12px;
+  }
+  .type-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--ink3);
+  }
+  .type-btn.active-expense { background: var(--card); color: var(--accent); box-shadow: var(--shadow); }
+  .type-btn.active-income { background: var(--card); color: var(--green); box-shadow: var(--shadow); }
+
+  /* Amount input */
+  .amount-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .currency-symbol { font-size: 22px; color: var(--ink3); }
+  .amount-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    width: 100%;
+  }
+  .amount-input::placeholder { color: var(--ink3); font-weight: 300; }
+
+  /* Category grid */
+  .cat-label { font-size: 12px; color: var(--ink3); font-weight: 500; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .cat-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+  }
+  .cat-item:hover { background: var(--bg); }
+  .cat-item.selected { border-color: var(--accent); background: var(--red-light); }
+  .cat-item.selected.income-type { border-color: var(--green); background: var(--green-light); }
+  .cat-emoji { font-size: 22px; }
+  .cat-name { font-size: 10px; color: var(--ink2); text-align: center; line-height: 1.2; }
+
+  /* Note input */
+  .note-input {
+    width: 100%;
+    background: var(--bg);
+    border: none;
+    outline: none;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .note-input::placeholder { color: var(--ink3); }
+
+  /* Submit btn */
+  .submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .submit-btn.income-mode { background: var(--green); }
+  .submit-btn:hover { opacity: 0.9; }
+  .submit-btn:active { transform: scale(0.98); }
+
+  /* Stats view */
+  .stats-content { padding: 16px 16px 0; }
+  .stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .stat-card-title {
+    font-size: 12px;
+    color: var(--ink3);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+  .cat-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .cat-stat-bar-wrap { flex: 1; }
+  .cat-stat-name { font-size: 13px; margin-bottom: 4px; }
+  .cat-stat-bar {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .cat-stat-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .cat-stat-amount { font-size: 13px; font-weight: 600; color: var(--ink); min-width: 60px; text-align: right; }
+
+  /* Invoice modal */
+  .invoice-card {
+    background: linear-gradient(135deg, #1A1714 0%, #2D2520 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: #fff;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .invoice-card::before {
+    content: '🎰';
+    position: absolute;
+    right: 16px; top: 16px;
+    font-size: 32px;
+    opacity: 0.3;
+  }
+  .invoice-period { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+  .invoice-nums { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  .invoice-prize-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+  }
+  .prize-name { font-size: 14px; font-weight: 500; }
+  .prize-amount { font-size: 14px; font-weight: 700; color: var(--accent); }
+
+  /* Chart bars */
+  .weekly-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 80px;
+    margin-top: 16px;
+  }
+  .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .chart-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+  .chart-bar {
+    width: 100%;
+    background: var(--accent);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.7;
+    transition: height 0.6s cubic-bezier(0.22,1,0.36,1);
+    min-height: 4px;
+  }
+  .chart-bar.today { opacity: 1; }
+  .chart-day { font-size: 10px; color: var(--ink3); }
+
+  /* Delete swipe */
+  .tx-delete-btn {
+    background: #fee2e2;
+    border: none;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #dc2626;
+    cursor: pointer;
+    margin-left: 8px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 500;
+    flex-shrink: 0;
+    display: none;
+  }
+  .tx-card:hover .tx-delete-btn { display: block; }
+
+  /* Responsive */
+  @media (min-width: 430px) {
+    body { box-shadow: 0 0 0 1px var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">隨手<span>記</span></div>
+      <div class="month-label" id="currentMonth"></div>
+    </div>
+    <button class="invoice-btn" onclick="openInvoice()">
+      <div class="invoice-dot"></div>
+      統一發票對獎
+    </button>
+  </div>
+  <div class="summary-row">
+    <div class="summary-item">
+      <div class="summary-label">本月支出</div>
+      <div class="summary-value expense" id="totalExpense">$0</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">本月收入</div>
+      <div class="summary-value income" id="totalIncome">$0</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">結餘</div>
+      <div class="summary-value balance" id="totalBalance">$0</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <div class="tab-item active" onclick="switchTab('list', this)">明細</div>
+  <div class="tab-item" onclick="switchTab('stats', this)">統計</div>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <!-- List view -->
+  <div id="listView">
+    <div id="txList"></div>
+  </div>
+
+  <!-- Stats view -->
+  <div id="statsView" style="display:none">
+    <div class="stats-content">
+
+      <!-- Weekly chart -->
+      <div class="stat-card">
+        <div class="stat-card-title">近7天支出</div>
+        <div class="weekly-chart" id="weeklyChart"></div>
+      </div>
+
+      <!-- Category breakdown -->
+      <div class="stat-card">
+        <div class="stat-card-title">支出分類</div>
+        <div id="catBreakdown"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openAddModal()">
+  ＋ 記一筆
+</button>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增記錄</div>
+
+    <div class="type-selector">
+      <button class="type-btn active-expense" id="expenseBtn" onclick="setType('expense')">支出</button>
+      <button class="type-btn" id="incomeBtn" onclick="setType('income')">收入</button>
+    </div>
+
+    <div class="amount-wrapper">
+      <span class="currency-symbol">$</span>
+      <input class="amount-input" type="number" id="amountInput" placeholder="0" inputmode="numeric">
+    </div>
+
+    <div class="cat-label">分類</div>
+    <div class="cat-grid" id="catGrid"></div>
+
+    <input class="note-input" type="text" id="noteInput" placeholder="備註（選填）" maxlength="30">
+
+    <button class="submit-btn" id="submitBtn" onclick="addTransaction()">記錄支出</button>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">統一發票對獎 🎰</div>
+
+    <div class="invoice-card">
+      <div class="invoice-period" id="invoicePeriod"></div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px;">特別獎號碼</div>
+      <div class="invoice-nums" id="specialPrize">載入中...</div>
+    </div>
+
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;font-weight:500;">各獎項中獎條件</div>
+    <div id="prizeList"></div>
+
+    <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:12px;line-height:1.6;">
+      獎號僅供示範，正式對獎請至財政部官網<br>或統一發票兌獎APP確認
+    </div>
+
+    <button class="submit-btn" style="margin-top:20px" onclick="closeInvoice()">關閉</button>
+  </div>
+</div>
+
+<script>
+// ====== DATA ======
+const EXPENSE_CATS = [
+  {emoji:'🍜',name:'餐飲'},{emoji:'🚇',name:'交通'},{emoji:'🛒',name:'購物'},
+  {emoji:'🎮',name:'娛樂'},{emoji:'🏠',name:'居家'},{emoji:'💊',name:'醫療'},
+  {emoji:'📚',name:'學習'},{emoji:'☕',name:'咖啡'},{emoji:'👗',name:'服飾'},
+  {emoji:'💡',name:'水電'}
+];
+const INCOME_CATS = [
+  {emoji:'💼',name:'薪資'},{emoji:'📈',name:'投資'},{emoji:'🎁',name:'獎金'},
+  {emoji:'🤝',name:'兼職'},{emoji:'💰',name:'其他'}
+];
+
+let transactions = JSON.parse(localStorage.getItem('twbudget_txs') || '[]');
+let currentType = 'expense';
+let selectedCat = 0;
+
+// ====== INIT ======
+function init() {
+  const now = new Date();
+  document.getElementById('currentMonth').textContent =
+    now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月';
+  renderAll();
+}
+
+// ====== RENDER ======
+function renderAll() {
+  renderSummary();
+  renderList();
+  renderStats();
+}
+
+function renderSummary() {
+  const now = new Date();
+  const thisMonth = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const exp = thisMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const inc = thisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('totalExpense').textContent = '$' + exp.toLocaleString();
+  document.getElementById('totalIncome').textContent = '$' + inc.toLocaleString();
+  const bal = inc - exp;
+  document.getElementById('totalBalance').textContent = (bal>=0?'$':'-$') + Math.abs(bal).toLocaleString();
+}
+
+function renderList() {
+  const list = document.getElementById('txList');
+  if (transactions.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">還沒有記錄<br>點下方「記一筆」開始吧</div></div>';
+    return;
+  }
+  // Group by date
+  const groups = {};
+  transactions.slice().reverse().forEach(t => {
+    const d = new Date(t.date);
+    const key = d.toLocaleDateString('zh-TW', {month:'numeric',day:'numeric',weekday:'short'});
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  list.innerHTML = Object.entries(groups).map(([date, txs]) => {
+    const dayExp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    const dayInc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const dayTotal = dayInc > 0 && dayExp > 0
+      ? `<span class="neg">-$${dayExp.toLocaleString()}</span> / <span class="pos">+$${dayInc.toLocaleString()}</span>`
+      : dayExp > 0 ? `<span class="neg">-$${dayExp.toLocaleString()}</span>`
+      : `<span class="pos">+$${dayInc.toLocaleString()}</span>`;
+
+    const txHTML = txs.map(t => {
+      const cats = t.type === 'expense' ? EXPENSE_CATS : INCOME_CATS;
+      const cat = cats[t.catIndex] || cats[0];
+      const bgColor = t.type === 'expense' ? '#FDF0EE' : '#EAF4EE';
+      return `
+        <div class="tx-card" onclick="deleteTx('${t.id}')">
+          <div class="tx-icon" style="background:${bgColor}">${cat.emoji}</div>
+          <div class="tx-info">
+            <div class="tx-name">${cat.name}</div>
+            ${t.note ? `<div class="tx-note">${t.note}</div>` : ''}
+          </div>
+          <div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}$${t.amount.toLocaleString()}</div>
+          <button class="tx-delete-btn" onclick="event.stopPropagation();deleteTx('${t.id}')">刪除</button>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="date-group">
+        <div class="date-header">
+          <div class="date-text">${date}</div>
+          <div class="date-total">${dayTotal}</div>
+        </div>
+        ${txHTML}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStats() {
+  // Weekly chart
+  const chart = document.getElementById('weeklyChart');
+  const days = ['日','一','二','三','四','五','六'];
+  const dayData = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const key = d.toDateString();
+    const total = transactions
+      .filter(t=>t.type==='expense' && new Date(t.date).toDateString()===key)
+      .reduce((s,t)=>s+t.amount,0);
+    dayData.push({day: days[d.getDay()], amount: total, isToday: i===0});
+  }
+  const maxVal = Math.max(...dayData.map(d=>d.amount), 1);
+  chart.innerHTML = dayData.map(d => `
+    <div class="chart-col">
+      <div class="chart-bar-wrap">
+        <div class="chart-bar ${d.isToday?'today':''}" style="height:${Math.round(d.amount/maxVal*100)}%"></div>
+      </div>
+      <div class="chart-day">${d.day}</div>
+    </div>
+  `).join('');
+
+  // Category breakdown
+  const breakdown = document.getElementById('catBreakdown');
+  const catTotals = {};
+  transactions.filter(t=>t.type==='expense').forEach(t => {
+    const cat = EXPENSE_CATS[t.catIndex] || EXPENSE_CATS[0];
+    if (!catTotals[cat.name]) catTotals[cat.name] = {emoji:cat.emoji, total:0};
+    catTotals[cat.name].total += t.amount;
+  });
+  const sorted = Object.entries(catTotals).sort((a,b)=>b[1].total-a[1].total);
+  const maxCat = sorted[0]?.[1].total || 1;
+
+  if (sorted.length === 0) {
+    breakdown.innerHTML = '<div style="color:var(--ink3);font-size:13px;text-align:center;padding:16px 0">還沒有支出記錄</div>';
+    return;
+  }
+  breakdown.innerHTML = sorted.map(([name,{emoji,total}]) => `
+    <div class="cat-stat-row">
+      <div style="font-size:20px">${emoji}</div>
+      <div class="cat-stat-bar-wrap">
+        <div class="cat-stat-name">${name}</div>
+        <div class="cat-stat-bar">
+          <div class="cat-stat-fill" style="width:${Math.round(total/maxCat*100)}%"></div>
+        </div>
+      </div>
+      <div class="cat-stat-amount">$${total.toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+// ====== MODAL ======
+function openAddModal() {
+  currentType = 'expense';
+  selectedCat = 0;
+  document.getElementById('amountInput').value = '';
+  document.getElementById('noteInput').value = '';
+  updateTypeUI();
+  renderCats();
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(()=>document.getElementById('amountInput').focus(),400);
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+function setType(type) {
+  currentType = type;
+  selectedCat = 0;
+  updateTypeUI();
+  renderCats();
+}
+
+function updateTypeUI() {
+  document.getElementById('expenseBtn').className = 'type-btn ' + (currentType==='expense'?'active-expense':'');
+  document.getElementById('incomeBtn').className = 'type-btn ' + (currentType==='income'?'active-income':'');
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = currentType === 'expense' ? '記錄支出' : '記錄收入';
+  btn.className = 'submit-btn ' + (currentType==='income'?'income-mode':'');
+}
+
+function renderCats() {
+  const cats = currentType === 'expense' ? EXPENSE_CATS : INCOME_CATS;
+  document.getElementById('catGrid').innerHTML = cats.map((c,i) => `
+    <div class="cat-item ${i===selectedCat?(currentType==='income'?'selected income-type':'selected'):''}" onclick="selectCat(${i})">
+      <div class="cat-emoji">${c.emoji}</div>
+      <div class="cat-name">${c.name}</div>
+    </div>
+  `).join('');
+}
+
+function selectCat(idx) {
+  selectedCat = idx;
+  renderCats();
+}
+
+function addTransaction() {
+  const amt = parseFloat(document.getElementById('amountInput').value);
+  if (!amt || amt <= 0) {
+    document.getElementById('amountInput').style.outline = '2px solid var(--accent)';
+    setTimeout(()=>document.getElementById('amountInput').style.outline='',1000);
+    return;
+  }
+  const tx = {
+    id: Date.now().toString(),
+    type: currentType,
+    amount: Math.round(amt),
+    catIndex: selectedCat,
+    note: document.getElementById('noteInput').value.trim(),
+    date: new Date().toISOString()
+  };
+  transactions.push(tx);
+  localStorage.setItem('twbudget_txs', JSON.stringify(transactions));
+  closeAddModal();
+  renderAll();
+}
+
+function deleteTx(id) {
+  if (!confirm('確定要刪除這筆記錄嗎？')) return;
+  transactions = transactions.filter(t=>t.id!==id);
+  localStorage.setItem('twbudget_txs', JSON.stringify(transactions));
+  renderAll();
+}
+
+// ====== TAB ======
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('listView').style.display = tab==='list' ? 'block' : 'none';
+  document.getElementById('statsView').style.display = tab==='stats' ? 'block' : 'none';
+  if (tab==='stats') renderStats();
+}
+
+// ====== INVOICE ======
+const INVOICE_DATA = {
+  period: '114年3月、4月',
+  special: '47829561',
+  grand: '03826471',
+  prizes: [
+    {name:'特別獎 (1000萬)', match:'末8碼全對'},
+    {name:'特獎 (200萬)', match:'末8碼全對'},
+    {name:'頭獎 (20萬)', match:'末7碼'},
+    {name:'二獎 (4萬)', match:'末6碼'},
+    {name:'三獎 (1萬)', match:'末5碼'},
+    {name:'四獎 (4,000)', match:'末4碼'},
+    {name:'五獎 (1,000)', match:'末3碼'},
+    {name:'六獎 (200)', match:'末3碼(增)'},
+  ]
+};
+
+function openInvoice() {
+  document.getElementById('invoicePeriod').textContent = INVOICE_DATA.period + ' 期';
+  document.getElementById('specialPrize').textContent = INVOICE_DATA.special;
+  document.getElementById('prizeList').innerHTML = INVOICE_DATA.prizes.slice(0,5).map(p=>`
+    <div class="invoice-prize-row">
+      <div class="prize-name">${p.name}</div>
+      <div style="font-size:12px;color:var(--ink3)">${p.match}</div>
+    </div>
+  `).join('');
+  document.getElementById('invoiceModal').classList.add('open');
+}
+
+function closeInvoice() {
+  document.getElementById('invoiceModal').classList.remove('open');
+}
+
+document.getElementById('invoiceModal').addEventListener('click', function(e) {
+  if (e.target === this) closeInvoice();
+});
+
+// ====== START ======
+init();
+</script>
+</body>
+</html>
